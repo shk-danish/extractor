@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Chunk Extractor</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .input-section {
+            background-color: rgba(255, 255, 255, 0.92);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            margin-bottom: 30px;
+        }
+        
+        .input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .input-header h2 {
+            color: #2c3e50;
+        }
+        
+        .char-count {
+            background-color: #3498db;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        #mainText {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        #mainText:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(to right, #3498db, #2c3e50);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        #extractBtn {
+            background: linear-gradient(to right, #2ecc71, #27ae60);
+        }
+        
+        #resetBtn {
+            background: linear-gradient(to right, #e74c3c, #c0392b);
+        }
+        
+        .output-section {
+            background-color: rgba(255, 255, 255, 0.92);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .output-header h2 {
+            color: #2c3e50;
+        }
+        
+        .chunk-count {
+            background-color: #9b59b6;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        .chunks-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+        
+        .chunk {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eee;
+        }
+        
+        .chunk-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .chunk-title {
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .chunk-size {
+            background-color: #3498db;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .chunk-textarea {
+            width: 100%;
+            height: 180px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            resize: vertical;
+            margin-bottom: 10px;
+        }
+        
+        .chunk-footer {
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .copy-btn {
+            background: linear-gradient(to right, #9b59b6, #8e44ad);
+            padding: 8px 15px;
+            font-size: 14px;
+            min-width: auto;
+        }
+        
+        .copy-btn.copied {
+            background: linear-gradient(to right, #2ecc71, #27ae60);
+        }
+        
+        .instructions {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .instructions h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 768px) {
+            .chunks-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-header, .output-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Text Chunk Extractor</h1>
+            <p class="subtitle">Split your text into manageable 3000-character chunks with a single click</p>
+        </header>
+        
+        <section class="input-section">
+            <div class="input-header">
+                <h2>Main Text Area</h2>
+                <div class="char-count">Characters: <span id="charCount">0</span></div>
+            </div>
+            <textarea id="mainText" placeholder="Enter your text here (0 to ∞ characters)..."></textarea>
+            <div class="btn-container">
+                <button id="extractBtn">Extract Chunks</button>
+                <button id="resetBtn">Reset All</button>
+            </div>
+        </section>
+        
+        <section class="output-section">
+            <div class="output-header">
+                <h2>Extracted Text Chunks</h2>
+                <div class="chunk-count">Chunks: <span id="chunkCount">0</span></div>
+            </div>
+            <div id="chunksContainer" class="chunks-container">
+                <!-- Chunks will be inserted here -->
+            </div>
+        </section>
+        
+        <section class="instructions">
+            <h3>How to use this tool:</h3>
+            <ul>
+                <li>Type or paste your text into the main text area</li>
+                <li>Click "Extract Chunks" to split your text into 3000-character segments</li>
+                <li>Each chunk will appear in its own text box below</li>
+                <li>Use the "Reset All" button to clear everything and start over</li>
+                <li>Copy individual chunks as needed for your work</li>
+            </ul>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainText = document.getElementById('mainText');
+            const extractBtn = document.getElementById('extractBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const chunksContainer = document.getElementById('chunksContainer');
+            const charCount = document.getElementById('charCount');
+            const chunkCount = document.getElementById('chunkCount');
+            
+            // Update character count as user types
+            mainText.addEventListener('input', function() {
+                charCount.textContent = mainText.value.length;
+            });
+            
+            // Extract chunks button handler
+            extractBtn.addEventListener('click', function() {
+                // Clear existing chunks
+                chunksContainer.innerHTML = '';
+                
+                const text = mainText.value;
+                const chunkSize = 3000;
+                let chunkCounter = 0;
+                
+                // Create chunks
+                for (let i = 0; i < text.length; i += chunkSize) {
+                    chunkCounter++;
+                    const chunk = text.substring(i, i + chunkSize);
+                    
+                    const chunkElement = document.createElement('div');
+                    chunkElement.className = 'chunk';
+                    chunkElement.innerHTML = `
+                        <div class="chunk-header">
+                            <div class="chunk-title">Chunk ${chunkCounter}</div>
+                            <div class="chunk-size">${chunk.length} chars</div>
+                        </div>
+                        <textarea class="chunk-textarea" readonly>${chunk}</textarea>
+                        <div class="chunk-footer">
+                            <button class="copy-btn">Copy Text</button>
+                        </div>
+                    `;
+                    
+                    chunksContainer.appendChild(chunkElement);
+                }
+                
+                // Update chunk count display
+                chunkCount.textContent = chunkCounter;
+                
+                // Add event listeners to all copy buttons
+                document.querySelectorAll('.copy-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const chunkText = this.closest('.chunk').querySelector('.chunk-textarea').value;
+                        navigator.clipboard.writeText(chunkText).then(() => {
+                            // Change button style temporarily
+                            const originalText = this.textContent;
+                            this.textContent = 'Copied!';
+                            this.classList.add('copied');
+                            
+                            setTimeout(() => {
+                                this.textContent = originalText;
+                                this.classList.remove('copied');
+                            }, 2000);
+                        }).catch(err => {
+                            console.error('Failed to copy text: ', err);
+                        });
+                    });
+                });
+            });
+            
+            // Reset button handler
+            resetBtn.addEventListener('click', function() {
+                mainText.value = '';
+                chunksContainer.innerHTML = '';
+                charCount.textContent = '0';
+                chunkCount.textContent = '0';
+            });
+            
+            // Initialize character count
+            charCount.textContent = mainText.value.length;
+        });
+    </script>
+</body>
+</html>
